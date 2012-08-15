@@ -1,0 +1,65 @@
+
+<% if signed_in? %>
+<div class="row">
+  <div>
+  <ul class="nav nav-pills">
+    <li class="span2">
+	    <h2>
+	      Greenstar
+	    </h2>
+    </li>
+   
+    <li class="active span2">
+	    <a href="/profile"> Profile </a>
+    </li>
+    <li class="span2">
+	    <a href="/outlets"> Outlets </a>
+    </li>
+    <li class="span2">
+	    <a href="/automation"> Automation </a>
+    </li>
+    <li class="span2">
+	    <a href="/faq"> Help </a>
+    </li>
+
+    <li class="">
+	    <%= link_to "Sign out", signout_path, :method => :delete %>
+    </li>
+  </ul>
+  </div>
+</div> 
+<% else %>
+
+<div class="row">
+  <div>
+  <ul class="nav nav-pills">
+  <li class="">
+	      <h2 class="span2">
+	        Greenstar
+	      </h2>
+      </li>
+
+      <li class="offset1">
+	      <a href="/">Home</a>
+      </li>
+      <li class="">
+	      <a href="/">Products</a>
+      </li>
+      <li class="">
+	      <a href="/faq">FAQ</a>
+      </li>
+
+      <div class="offset4">
+	      <%= form_for(:session, :url => sessions_path) do |f| %>
+	      <%= f.text_field :email %>
+	      <%= f.password_field :password %>
+	      <%= f.submit "Sign in" %>
+	      <% end %>
+      </div>
+
+
+  </ul>
+  </div>
+</div>  
+<% end %>
+

@@ -1,0 +1,349 @@
+<html>
+
+
+<head>
+
+
+
+
+  <title>GreenStar @ Lee Hall Makers Space</title>
+
+	<%= stylesheet_link_tag 'tooltip', :media => 'screen' %>
+
+ 	<style type="text/css">
+	  	body {
+	    
+		    background: #c9e9c3;
+		    margin: 0;
+		    padding-top: 5;
+		    font-size: 12px;
+
+	  	} 
+
+	</style>
+  
+
+
+
+  <%= javascript_include_tag "jquery"  %>
+  <%= javascript_include_tag "jquery.sparkline" %>
+
+
+  <% units = Unit.all %>
+
+<script type="text/javascript">
+
+	console.log("begin");
+
+		$(document).ready(function(){
+			
+
+			// set the wrapper width and height to match the img size
+			$('#wrapper-tooltip').css({'width':$('#wrapper-tooltip img').width(),
+							  'height':$('#wrapper-tooltip img').height()
+			})
+			
+			//tooltip direction
+			var tooltipDirection;
+						 
+			for (i=0; i<$(".pin").length; i++)
+			{				
+				// set tooltip direction type - up or down             
+				if ($(".pin").eq(i).hasClass('pin-down')) {
+					tooltipDirection = 'tooltip-down';
+				} else {
+					tooltipDirection = 'tooltip-up';
+					}
+			
+				// append the tooltip
+				$("#wrapper-tooltip").append("<div data-unitid=\""+$(".pin").eq(i).data('unitid') + "\" style='left:"+$(".pin").eq(i).data('xpos')+"px;top:"+$(".pin").eq(i).data('ypos')+"px' class='" + tooltipDirection +"'>\
+													<div class='tooltip'>" + $(".pin").eq(i).html() + "</div>\
+											</div>");
+
+				$("tooltip").load("unit_details/1");
+			}    
+			
+			// show/hide the tooltip
+			$('.tooltip-up, .tooltip-down').mouseenter(function(){
+						$(this).children('.tooltip').fadeIn(100);
+						var unitid = $(this).data('unitid');
+						console.log(unitid);
+
+						var points_arrays = new Array(6);
+
+						var max_points = 30;
+
+						for(i=0;i<6;i++){
+							points_arrays[i] = new Array();
+
+							for(j=0;j<max_points;j++){
+								points_arrays[i].push(0);
+							}
+						}
+
+						this.interval = setInterval(
+							function(){
+
+								$.ajax({
+									url: '/get_latest_slot_readings/' + unitid ,
+									
+									success: function(data){
+									
+									if(data){
+
+										
+										var total = 0;
+										for(i=1;i<=6;i++){
+										
+											total = total + data[i];
+											points_arrays[i-1].push(data[i]);
+											if(points_arrays[i-1].length > max_points)
+												points_arrays[i-1].splice(0,1);
+										}
+										
+										$("div.totalPower"+unitid).html("Total Power: " + total.toString() + " watts");
+
+										$("div.outlet1"+unitid).sparkline(points_arrays[0], { width: points_arrays[0].length*2, tooltipSuffix: ' watts'});
+
+										$("div.outlet2"+unitid).sparkline(points_arrays[1], { width: points_arrays[1].length*2, tooltipSuffix: ' watts'});
+
+										$("div.outlet3"+unitid).sparkline(points_arrays[2], { width: points_arrays[2].length*2, tooltipSuffix: ' watts'});
+
+										$("div.outlet4"+unitid).sparkline(points_arrays[3], { width: points_arrays[3].length*2, tooltipSuffix: ' watts'});
+
+										$("div.outlet5"+unitid).sparkline(points_arrays[4], { width: points_arrays[4].length*2, tooltipSuffix: ' watts'});
+
+										$("div.outlet6"+unitid).sparkline(points_arrays[5], { width: points_arrays[5].length*2, tooltipSuffix: ' watts'});
+										
+										console.log("end");				
+										
+									}
+								}
+							});
+							}
+
+						, 1000 );  ///////// 1 second
+
+					}).mouseleave(function(){
+						$(this).children('.tooltip').fadeOut(100);
+
+						clearInterval(this.interval);
+
+					})
+		});
+</script>
+
+
+</head>
+
+<body>
+
+
+<div id="wrapper-tooltip">
+   <img width="800" height="600" src="images/leehallmakers.png" alt="Lee Hall Makers Space">
+
+	<% ucount = 0
+
+ 	units.each do |u| %>
+
+ 		<div class="pin pin-down" data-xpos="<%=u.locx%>" data-ypos="<%=u.locy%>" data-unitid="<%=u.id%>">
+
+   			<div class="totalPower<%=u.id%>">Total Power: Loading...</div>
+
+   			<% scount = 1
+   			u.slots.each do |s| %>
+
+			Outlet <%=scount%>: <div class="outlet<%=scount%><%=u.id%>">Loading..</div>
+
+ 			<% scount = scount + 1
+ 			end %>
+
+ 		</div>
+ 	<% ucount = ucount + 1
+ 	end %>
+   
+</div>
+
+</body>
+</html>
+
+<!--<div class="row well" style="box-shadow: 0 0 10px 1px #888; background: #FFFFFF;">
+
+    <div class="span5">
+      <h2>Use Less Energy.</h2>
+      <p><h2>Save Money.</h2>
+      <br>
+      <p>Greenstar makes it easy for you to monitor and control any electronic
+          device in your home.
+      <p>
+      <br>
+      <a class="btn btn-large btn-primary span2" href="">Learn More</a>
+      <br><br><br>
+    </div>
+    
+		<div class="span5 offset1">
+		  
+			<img src="images/outletplug.png">
+		</div>
+	
+</div>
+
+
+<div class="row-fluid">
+	
+		<div class="">
+			<h2> Smart-grid technology starts in the home! It starts with <i>you!</i></h2>
+			<div class="well">
+				<b>GreenStar</b> is an inexpensive, modular and fun solution for 
+				<b>energy management and home automation.</b> We provide outlet-covers 
+				and powerstrips that send power usage to the web and can be turned on and off.  
+				The home owner can start with a few and then expand to more. It's easy to keep track of your 
+				trends and begin making changes to help save you money.
+			</div>
+		</div>
+	
+</div>
+
+
+<div class="row well" style="box-shadow: 0 0 10px 1px #888; background: #FFFFFF;">
+
+  <div>
+    <h2>
+    You'll love saving money with Greenstar
+    </h2>
+  </div>
+  
+  <hr>
+  
+    <div class="row" style="background: #cee1f4; margin: 0; border: 0;
+                            background-image: -webkit-gradient(linear, left top, right top, from(#fff), to(#f7f8ef));">
+	
+	    <div class="span4 offset1">
+		    <img src="images/powerstrip.png">
+		  </div>
+		
+		  <div class="span4 offset1">
+		    <br><br><h3>
+		      Like any other power strip...
+		    </h3><br>
+		    <p>Just plug your electronics into our power-sensing strips. <a href="/">See our products.</a>
+		  </div>
+		
+  </div>
+  
+
+  
+  <div class="row" style="background: #cee1f4; margin: 0; border: 0; padding: 1px 0;
+                          background-image: -webkit-gradient(linear, left top, right top, from(#f7f8ef), to(#fff));">
+  
+    <div class="span5 offset1">
+	    <br><br><h3>
+	      Monitor and control from anywhere
+	    </h3><br>
+	    <p>Use any web enabled device to keep track of energy usage. <a href="/">Check out the features.</a>
+	  </div>
+	
+	  <div class="span4 offset1">
+	    <img src="images/iphone.png">
+	  </div>
+  
+  </div>
+  
+  <div class="row" style="background: #cee1f4; margin: 0; border: 0;
+                            background-image: -webkit-gradient(linear, left top, right top, from(#fff), to(#f7f8ef));">
+	
+	    <div class="span4 offset1">
+		    <img src="images/moneytree.png">
+		  </div>
+		
+		  <div class="span4 offset1">
+		    <br><br><h3>
+		      Save up to 20%
+		    </h3><br>
+		    <p>Start saving up to 20% on your electric bill. <a href="/">Read the FAQ.</a>
+		  </div>
+		
+  </div>
+  
+  
+</div>
+
+<div class="row">
+
+	<div class="row">
+	
+		<div class="span4">
+			<h2> Modular Setup </h2>
+			<div class="well">
+				Start monitoring and controlling a few outlets and expand to more using our <b>cheap</b> outlet-covers and powerstrips.
+			</div>
+		</div>
+	
+		<div class="span4">
+			<h2> Build Your Profile </h2>
+			<div class="well">
+				Log the power usage of devices in your home, locate power hogs and make changes to save money.
+			</div>
+		</div>
+	
+		<div class="span4">
+			<h2> Be In Control </h2>
+			<div class="well">
+				Awareness of your energy usage can help reduce it by 20%. Schedules, timers and alerts can reduce this even more.
+			</div>
+		</div>
+		
+	</div>
+	
+	<div class="row">
+		
+		<div class="span4">
+			<h2> Build a community </h2>
+			<div class="well">
+				Create groups with your friends, share your strategies, make goals and learn together.
+			</div>
+		</div>
+		
+		<div class="span4">
+			<h2> Have fun!  </h2>
+			<div class="well">
+				 Gain achievements, earn points; all while saving money on your electric bill.
+			</div>
+		</div>
+	
+		<div class="span4">
+			<h2> Headline  </h2>
+			<div class="well">
+				A bunch of text describing more of the headline...
+			</div>
+		</div>
+	
+	</div>
+	
+	<div class="row">
+	
+		<div class="span4">
+		  <h2>Newsletter Signup!</h2>
+		  <div class="well">
+		  Enter your email to receive updates:
+		  	<%= form_for(@user) do |f| %>
+			<%= f.text_field :email %>
+			<%= f.submit "Sign Up!" %>
+			<% end %>
+		   </div>
+		</div>
+	
+		<div class="span4 offset4">
+		  <h2>Get Started! </h2>
+		  <form class="well">
+			<label>Enter your product serial # to start:</label>
+			<input type="text" class="span3" placeholder="Serial #">
+			</label>
+			<button type="submit" class="btn">Submit</button>
+		   </form>
+		</div>
+	
+	</div>
+	
+</div>
+-->

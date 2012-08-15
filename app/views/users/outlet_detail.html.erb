@@ -1,0 +1,149 @@
+<script>
+
+  Highcharts.setOptions({
+   global: {
+      useUTC: false
+   }
+});
+
+<% @slot = Slot.find(params[:slot]) %>
+
+	var chart;
+	$(document).ready(function() {
+	   chart = new Highcharts.Chart({
+		  chart: {
+			 renderTo: 'hc-container',
+			 defaultSeriesType: 'spline',
+			 marginRight: 10,
+			 events: {
+				load: function() {
+	   
+					var series = this.series[0];
+					setInterval(function() {
+							
+						$.ajax({
+							url: "/get_latest_data/<%= @slot.id %>",
+							success: function(data){
+								
+								if(data){
+									
+									var x = new Date().getTime();
+									var y = data.data_point.val;
+									
+										series.addPoint([x,y], true, true);
+										$('div.outletWatts').html("<h2><%= @slot.label %> Real-time Power Usage: " + y.toString() + " watts </h2>");
+									
+								}
+							
+						
+							
+							
+						}
+						});
+							
+						
+					}, 2000 );
+						   
+				}
+			 }
+			 
+		  },
+		  title: {
+			 text: 'Real-time Power Consumption'
+		  },
+		  xAxis: {
+			 type: 'datetime',
+			 tickInterval: 2000
+		  },
+		  yAxis: {
+			max: 99,
+			min: 0,
+			 title: {
+				text: 'Watts'
+			 },
+			 plotLines: [{
+				value: 0,
+				width: 1,
+				color: '#808080'
+			 }]
+		  },
+		  tooltip: {
+			 formatter: function() {
+					   return '<b>'+ this.series.name +'</b><br/>'+
+				   Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) +'<br/>'+ 
+				   Highcharts.numberFormat(this.y, 2);
+			 }
+		  },
+		  legend: {
+			 enabled: false
+		  },
+		  exporting: {
+			 enabled: false
+		  },
+		  series: [{
+		  	name: '<%= @slot.label %> Live Data',
+         	data: (function() {
+				// generate an array of random data
+				var data = [];
+				
+				<% @slot.data_points[-20..-1].each do |dp| %>
+				   data.push({
+					 x: (new Date('<%= dp.updated_at %>')).getTime(),
+					 y: <%= dp.val %>
+				   });
+				 <% end %>
+				return data;
+         })()
+		  
+	   }]
+	   
+	});
+});
+		
+</script>
+
+<div class="row">
+
+	<div class="well span12">
+		
+	<div class="outletWatts"><h2><%=@slot.label%> Real-time Power Usage: 0 watts</h2></div>
+
+	</div>
+	
+</div>
+
+<div class="row">
+		
+<div class="well offset1 span10">
+
+	<div id="hc-container" class="highcharts-container" style="height:400px;margin: 0 2em; clear:both;width:600px;">
+	</div>
+</div>
+
+</div>
+	
+<div class="row">
+	
+	<div class="well offset3 span6">
+	
+		<h2>
+			<%= form_tag({ :action => "update_label", controller => "users", "user_id" => @user.id, "slot_id" => @slot.id }) do %>
+			<%= text_field_tag(:label, value = @slot.label) %>
+			<%= submit_tag("Update") %>
+			<% end %>
+		</h2>
+		
+		<p> Product ID: <%=Unit.find(@slot.unit_id).uid%> </p>
+		<p> Slot: <%=@slot.position%> </p>
+		<p>
+		Power is:<a href="/change_power/<%=@slot.id%>">
+		<% if @slot.power %>
+		Off
+		<% else %>
+		  On
+		<% end %>
+		</a>
+		</p>
+		
+	</div>
+</div>

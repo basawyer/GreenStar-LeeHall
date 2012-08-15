@@ -1,0 +1,114 @@
+<html>
+<head>
+  <title></title>
+
+  <style type="text/css">
+  body {
+    
+    background: #c9e9c3;
+    margin: 0;
+    padding-top: 5;
+    font-size: 12px;
+
+  }
+  
+
+</style>
+  
+  <%= javascript_include_tag "jquery"  %>
+  <%= javascript_include_tag "jquery.sparkline" %>
+  
+  <script>
+
+	<% 
+
+	unit = Unit.find(params[:unit])
+
+	%>
+
+	var points_arrays = new Array(<%=unit.slots.size%>);
+
+	var max_points = 30;
+
+	for(i=0;i<<%=unit.slots.size%>;i++){
+		points_arrays[i] = new Array();
+
+		for(j=0;j<max_points;j++){
+			points_arrays[i].push(0);
+		}
+	}
+
+	$(function() {
+
+
+	setInterval(
+	function(){
+
+		$.ajax({
+			url: "/get_latest_slot_readings/<%=unit.id%>" ,
+			dataType: 'json',
+			success: function(data){
+			
+			if(data){
+
+				
+				var total = 0;
+				for(i=1;i<=<%=unit.slots.size%>;i++){
+				
+					total = total + data[i];
+					points_arrays[i-1].push(data[i]);
+					if(points_arrays[i-1].length > max_points)
+						points_arrays[i-1].splice(0,1);
+				}
+
+				
+				
+				$('div.totalPower').html("Total Power: " + total.toString() + " watts");
+				
+				<% count = 0 
+				unit.slots.each do |s| %>
+					$('#outlet<%=s.id%>').sparkline(points_arrays[<%=count%>], { width: points_arrays[<%=count%>].length*2, tooltipSuffix: ' watts'});
+					<% count = count + 1 %>
+				<% end %>
+				
+			}
+		}
+	});
+	}
+
+	, 1000 );  ///////// 1 second
+
+	});
+	 
+	 
+	</script>
+  
+</head>
+
+<body>
+
+<div class="totalPower">Total Power: Loading...</div>
+
+<% count = 0
+
+  unit.slots.each do |s| %>
+
+  <p>
+    	Outlet <%=s.id%>: <span id="outlet<%=s.id%>">Loading..</span>
+ 	</p>
+
+<% count = count + 1
+   end %>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+	

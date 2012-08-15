@@ -1,0 +1,112 @@
+<script>
+
+
+<% 
+
+@user = User.authenticate_with_salt(*cookies.signed[:remember_token])
+@units = Unit.where(:user_id => @user.id ) 
+@slots = Array.new
+@units.each do |u|
+	@slots += u.slots
+end
+
+%>
+
+$(function() {
+
+setInterval(
+function(){
+
+	$.ajax({
+		url: "/get_latest_slot_readings/" ,
+		success: function(data){
+		
+		
+		
+		if(data){
+			
+			var total = 0;
+			var readings = new Array();
+			for(i=0;i<<%=@slots.size%>;i++){
+			
+				total = total + data[i].data_point.val;
+				readings[i] = data[i].data_point.val;
+			}
+			
+			$('div.totalWatts').html("<h2> Real-time Total Power Usage: " + total.toString() + " watts </h2>");
+			
+			
+			<% count = 0%>
+			<% @slots.each do |s| %>
+			
+				$('div.outletWatts<%=s.id%>').html("<h2> Real-time Power Usage: " + readings[<%=count%>].toString() + " watts </h2>");
+				<% count = count + 1 %>
+			<% end %>
+			
+		}
+	}
+});
+}
+
+, 2000 );  ///////// 10 seconds
+
+});
+ 
+ 
+</script>
+
+<div class="row well span11" style="box-shadow: 0 0 10px 1px #888; background: #FFFFFF;">
+  <div class="totalWatts"><h2> Real-time Total Power Usage: 0</h2></div>
+</div>
+
+<div class="row">
+		
+	<h2>Register New Product:</h2>
+	<div class="row well span4" style="box-shadow: 0 0 10px 1px #888; background: #FFFFFF;">
+	  Enter product ID:
+		<%= form_tag({ :action => "register_unit", controller => "users", "user_id" => @user.id }) do %>
+		<%= text_field_tag(:uid) %>
+		<%= submit_tag("Register It") %>
+		<% end %>
+	</div>
+
+</div>
+
+		
+<% @units.each do |u|
+
+	u.slots.each do |s| %>
+	
+		<div class="row">
+		
+			<div class="row well span11" style="box-shadow: 0 0 10px 1px #888; background: #FFFFFF;">
+			
+			<div class="outletWatts<%=s.id%>"><h2>Real-time Power Usage: 0 watts</h2></div>
+				
+			
+				<h2>
+					<%= form_tag({ :action => "update_label", controller => "users", "user_id" => @user.id, "slot_id" => s.id }) do %>
+					<%= text_field_tag(:label, value = s.label) %>
+					<%= submit_tag("Update") %>
+					<% end %>
+				</h2>
+				
+				<p> Product ID: <%=u.uid%> </p>
+				<p> Slot: <%=s.position%> </p>
+				<p>
+				Power is:<a href="/change_power/<%=s.id%>">
+				<% if s.power %>
+				Off
+				<% else %>
+				  On
+				<% end %>
+				</a>
+				</p>
+				
+				<h2> <a href="/outlets/<%= s.id %>">Oulet Details </a> </h2>				
+			</div>
+			
+		</div>
+			
+	<% end %>
+<% end %>
